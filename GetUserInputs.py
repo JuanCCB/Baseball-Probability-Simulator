@@ -2,6 +2,7 @@ from lxml import html
 from pyparsing import nums
 from datetime import datetime
 import requests
+import cloudscraper
 
 def parse_input(input_team):
 
@@ -220,6 +221,14 @@ def parse_input(input_team):
 		
 def GetUserInputs():
 
+	headers = {
+		"User-Agent": (
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+			"AppleWebKit/537.36 (KHTML, like Gecko) "
+			"Chrome/114.0.0.0 Safari/537.36"
+		)
+	}
+
 	home_team_error = True
 	while home_team_error == True:
 		team = input("Enter the name of the home team: ")
@@ -235,7 +244,9 @@ def GetUserInputs():
 	home_year_error = True
 	while home_year_error == True:
 		homeYear = (datetime.strftime(datetime.now(), "%Y")) #Preparing a new version that supports teams for every year.
-		home_page = requests.get( "https://www.baseball-reference.com/teams/"
+		#home_page = requests.get( "https://www.baseball-reference.com/teams/"
+		#	+ homeAbbr + "/" + homeYear + ".shtml", headers=headers)
+		home_page = cloudscraper.create_scraper().get("https://www.baseball-reference.com/teams/"
 			+ homeAbbr + "/" + homeYear + ".shtml")
 		if str(home_page) != "<Response [200]>":
 			print("Invalid year.")
@@ -257,10 +268,12 @@ def GetUserInputs():
 	away_year_error = True
 	while away_year_error == True:
 		awayYear = (datetime.strftime(datetime.now(), "%Y")) #Preparing a new version that supports teams for every year.
-		away_page = requests.get(
-			"https://www.baseball-reference.com/teams/" + awayAbbr 
-			+ "/" + awayYear + ".shtml"
-		)
+		#away_page = requests.get(
+		#	"https://www.baseball-reference.com/teams/" + awayAbbr 
+		#	+ "/" + awayYear + ".shtml"
+		#)
+		away_page = cloudscraper.create_scraper().get("https://www.baseball-reference.com/teams/"
+			+ awayAbbr + "/" + awayYear + ".shtml")
 		if str(away_page) != "<Response [200]>":
 			print("Invalid year.")
 			continue
@@ -271,7 +284,7 @@ def GetUserInputs():
 	while num_sim_error == True:
 		numSim = input("Enter the number of games simulated: ")
 		if int(numSim) > 10000:
-			print("Max Simulations: 1000.")
+			print("Max Simulations: 10000.")
 			continue
 		else:
 			num_sim_error = False

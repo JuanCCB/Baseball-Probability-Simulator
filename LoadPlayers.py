@@ -8,11 +8,11 @@ def LoadBatters(abbrs, years):
 
 	# Load baseball-reference page for inputted team/year
 	# URL format: https://www.baseball-reference.com/teams/BOS/2004.shtml
-	home_page = requests.get(
+	home_page = cloudscraper.create_scraper().get(
 		"https://www.baseball-reference.com/teams/" + abbrs["home"]  + "/" + years["home"] + ".shtml"
 	)
 	home_tree = html.fromstring(home_page.content)
-	away_page = requests.get(
+	away_page = cloudscraper.create_scraper().get(
 		"https://www.baseball-reference.com/teams/" + abbrs["away"]  + "/" + years["away"] + ".shtml"
 	)
 	away_tree = html.fromstring(away_page.content)
@@ -24,40 +24,48 @@ def LoadBatters(abbrs, years):
 	for x in range(8):
 		# Home
 		fullname = home_tree.xpath(
-			'//table[@id="team_batting"]/tbody/tr[' + str(x + 1) + "]/td[2]/@csk"
-		)
-		fname = str(fullname).partition(",")[2]
-		lname = str(fullname).partition(",")[0]
+			'//table[@id="players_standard_batting"]//tbody//tr[' + str(x + 1) + "]//td[1]"
+							)[0].text_content().strip()
+		fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+		lname = str(fullname).split()[1].replace("*", "").replace("#", "")
 		batters["home"][x] = fname.strip("[],'") + " " + lname.strip("[],'")
 		batters_stats["home"][x] = batter_i(fname.strip("[],'"), lname.strip("[],'")) #Batters stats
 
 		# Away
 		fullname = away_tree.xpath(
-			'//table[@id="team_batting"]/tbody/tr[' + str(x + 1) + "]/td[2]/@csk"
-		)
-		fname = str(fullname).partition(",")[2]
-		lname = str(fullname).partition(",")[0]
+			'//table[@id="players_standard_batting"]//tbody//tr[' + str(x + 1) + "]//td[1]"
+							)[0].text_content().strip()
+		fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+		lname = str(fullname).split()[1].replace("*", "").replace("#", "")
 		batters["away"][x] = fname.strip("[],'") + " " + lname.strip("[],'")
 		batters_stats["away"][x] = batter_i(fname.strip("[],'"), lname.strip("[],'")) #Batters stats
 
 	# Scrape name of 9th batter (sometimes the formatting on baseball-reference skips the 9th row)
 	# Home
-	fullname = home_tree.xpath('//table[@id="team_batting"]/tbody/tr[9]/td[2]/@csk')
+	fullname = home_tree.xpath(
+			'//table[@id="players_standard_batting"]//tbody//tr[9]//td[1]'
+							)[0].text_content().strip()
 	if fullname == []:
-		fullname = home_tree.xpath('//table[@id="team_batting"]/tbody/tr[10]/td[2]/@csk')
+		fullname = home_tree.xpath(
+			'//table[@id="players_standard_batting"]//tbody//tr[10]//td[1]'
+							)[0].text_content().strip()
 
-	fname = str(fullname).partition(",")[2]
-	lname = str(fullname).partition(",")[0]
+	fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+	lname = str(fullname).split()[1].replace("*", "").replace("#", "")
 	batters["home"][8] = fname.strip("[],'") + " " + lname.strip("[],'")
 	batters_stats["home"][8] = batter_i(fname.strip("[],'"), lname.strip("[],'")) #Batters stats
 
 	# Away
-	fullname = away_tree.xpath('//table[@id="team_batting"]/tbody/tr[9]/td[2]/@csk')
+	fullname = away_tree.xpath(
+			'//table[@id="players_standard_batting"]//tbody//tr[9]//td[1]'
+							)[0].text_content().strip()
 	if fullname == []:
-		fullname = away_tree.xpath('//table[@id="team_batting"]/tbody/tr[10]/td[2]/@csk')
+		fullname = away_tree.xpath(
+			'//table[@id="players_standard_batting"]//tbody//tr[10]//td[1]'
+							)[0].text_content().strip()
 
-	fname = str(fullname).partition(",")[2]
-	lname = str(fullname).partition(",")[0]
+	fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+	lname = str(fullname).split()[1].replace("*", "").replace("#", "")
 	batters["away"][8] = fname.strip("[],'") + " " + lname.strip("[],'")
 	batters_stats["away"][8] = batter_i(fname.strip("[],'"), lname.strip("[],'")) #Batters stats
 
@@ -68,25 +76,29 @@ def LoadBatters(abbrs, years):
 	# Scrape batting averages of first 8 batters
 	for x in range(8):
 		avg = home_tree.xpath(
-			'//table[@id="team_batting"]/tbody/tr[' + str(x + 1) + "]/td[17]/text()"
-		)
+			'//table[@id="players_standard_batting"]//tbody//tr[' + str(x + 1) + "]//td[18]"
+							)[0].text_content().strip()
 		home_avg[x] = float(str(avg).strip("[]'"))
 		avg = away_tree.xpath(
-			'//table[@id="team_batting"]/tbody/tr[' + str(x + 1) + "]/td[17]/text()"
-		)
+			'//table[@id="players_standard_batting"]//tbody//tr[' + str(x + 1) + "]//td[18]"
+							)[0].text_content().strip()
 		away_avg[x] = float(str(avg).strip("[]'"))
 
 	# Scrape batting average of 9th batter
-	avg = home_tree.xpath('//table[@id="team_batting"]/tbody/tr[9]/td[17]/text()')
+	avg = home_tree.xpath('//table[@id="players_standard_batting"]//tbody//tr[9]//td[18]'
+							)[0].text_content().strip()
 	if avg == []:
-		avg = home_tree.xpath('//table[@id="team_batting"]/tbody/tr[10]/td[17]/text()')
+		avg = home_tree.xpath('//table[@id="players_standard_batting"]//tbody//tr[10]//td[18]'
+							)[0].text_content().strip()
 		home_avg[8] = float(str(avg).strip("[]'"))
 	else:
 		home_avg[8] = float(str(avg).strip("[]'"))
 
-	avg = away_tree.xpath('//table[@id="team_batting"]/tbody/tr[9]/td[17]/text()')
+	avg = away_tree.xpath('//table[@id="players_standard_batting"]//tbody//tr[9]//td[18]'
+							)[0].text_content().strip()
 	if avg == []:
-		avg = away_tree.xpath('//table[@id="team_batting"]/tbody/tr[10]/td[17]/text()')
+		avg = away_tree.xpath('//table[@id="players_standard_batting"]//tbody//tr[10]//td[18]'
+							)[0].text_content().strip()
 		away_avg[8] = float(str(avg).strip("[]'"))
 	else:
 		away_avg[8] = float(str(avg).strip("[]'"))
@@ -140,13 +152,13 @@ def LoadBatters(abbrs, years):
 
 def LoadPitchers(abbrs, years):
 
-	home_page = requests.get(
-		"https://www.baseball-reference.com/teams/" + abbrs["home"]  + "/" + years["home"] + ".shtml"
-	)
+	home_page = cloudscraper.create_scraper().get(
+			"https://www.baseball-reference.com/teams/" + abbrs["home"]  + "/" + years["home"] + ".shtml"
+		)
 	home_tree = html.fromstring(home_page.content)
-	away_page = requests.get(
-		"https://www.baseball-reference.com/teams/" + abbrs["away"]  + "/" + years["away"] + ".shtml"
-	)
+	away_page = cloudscraper.create_scraper().get(
+			"https://www.baseball-reference.com/teams/" + abbrs["away"]  + "/" + years["away"] + ".shtml"
+		)
 	away_tree = html.fromstring(away_page.content)
 
 	###########################################################
@@ -194,69 +206,189 @@ def LoadPitchers(abbrs, years):
 	# (Some extras because there are a variable number of blank/header lines mixed in)
 	for x in range(12):
 		# Home
-		fullname = home_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[2]/@csk"
-		)
-		position = home_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr['
-			+ str(x + 1)
-			+ "]/td[1]/descendant::strong/text()"
-		)
-		if str(fullname).strip("[],'") != "":
-			fname = str(fullname).partition(",")[2]
-			lname = str(fullname).partition(",")[0]
-			if str(position).strip("[],'") == "CL":
-				# Home closer detected
-				closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = home_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				closers["home"][1] = float(str(era).strip("[]'"))
-				closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
-				pitchers["home"][x][0] = "_EMPTY_"
+		if x <= 4:
+			fullname = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[1]"
+								)[0].text_content().strip()
+			position = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Home closer detected
+					closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath('//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["home"][1] = float(str(era).strip("[]'"))
+					closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["home"][x][0] = "_EMPTY_"
+				else:
+					# Not closer
+					pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["home"][x][1] = float(str(era).strip("[]'"))
+					pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
 			else:
-				# Not closer
-				pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = home_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				pitchers["home"][x][1] = float(str(era).strip("[]'"))
-				pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
-		else:
-			# Blank/header line
-			pitchers["home"][x][0] = "_EMPTY_"
+				# Blank/header line
+				pitchers["home"][x][0] = "_EMPTY_"
 
-		# Away
-		fullname = away_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[2]/@csk"
-		)
-		position = away_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr['
-			+ str(x + 1)
-			+ "]/td[1]/descendant::strong/text()"
-		)
-		if str(fullname).strip("[],'") != "":
-			fname = str(fullname).partition(",")[2]
-			lname = str(fullname).partition(",")[0]
-			if str(position).strip("[],'") == "CL":
-				# Away closer detected
-				closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = away_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				closers["away"][1] = float(str(era).strip("[]'"))
-				closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			# Away
+			fullname = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[1]"
+								)[0].text_content().strip()
+			position = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Away closer detected
+					closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["away"][1] = float(str(era).strip("[]'"))
+					closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["away"][x][0] = "_EMPTY_"
+				else:  # Not closer
+					pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["away"][x][1] = float(str(era).strip("[]'"))
+					pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
 				pitchers["away"][x][0] = "_EMPTY_"
-			else:  # Not closer
-				pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = away_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				pitchers["away"][x][1] = float(str(era).strip("[]'"))
-				pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
-		else:
-			# Blank/header line
-			pitchers["away"][x][0] = "_EMPTY_"
+
+		if x > 4 and x <= 9:
+			# Home
+			fullname = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[1]"
+								)[0].text_content().strip()
+			position = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Home closer detected
+					closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["home"][1] = float(str(era).strip("[]'"))
+					closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'"))
+					pitchers["home"][x][0] = "_EMPTY_"
+				else:
+					# Not closer
+					pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["home"][x][1] = float(str(era).strip("[]'"))
+					pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["home"][x][0] = "_EMPTY_"
+
+			# Away
+			fullname = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[1]"
+								)[0].text_content().strip()
+			position = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Away closer detected
+					closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["away"][1] = float(str(era).strip("[]'"))
+					closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["away"][x][0] = "_EMPTY_"
+				else:  # Not closer
+					pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["away"][x][1] = float(str(era).strip("[]'"))
+					pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["away"][x][0] = "_EMPTY_"
+
+		if x > 9:
+			# Home
+			fullname = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[1]"
+								)[0].text_content().strip()
+			position = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Home closer detected
+					closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["home"][1] = float(str(era).strip("[]'"))
+					closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'"))
+					pitchers["home"][x][0] = "_EMPTY_"
+				else:
+					# Not closer
+					pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["home"][x][1] = float(str(era).strip("[]'"))
+					pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["home"][x][0] = "_EMPTY_"
+
+			# Away
+			fullname = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[1]"
+								)[0].text_content().strip()
+			position = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Away closer detected
+					closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["away"][1] = float(str(era).strip("[]'"))
+					closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["away"][x][0] = "_EMPTY_"
+				else:  # Not closer
+					pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["away"][x][1] = float(str(era).strip("[]'"))
+					pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["away"][x][0] = "_EMPTY_"
 
 	# For some reason, these loops need to be run twice each to remove empty array elements
 	for x in pitchers["home"]:
@@ -281,18 +413,18 @@ def LoadPitchers(abbrs, years):
 
 def LoadRelievers(abbrs, years):
 
-	home_page = requests.get(
-		"https://www.baseball-reference.com/teams/" + abbrs["home"]  + "/" + years["home"] + ".shtml"
-	)
+	home_page = cloudscraper.create_scraper().get(
+			"https://www.baseball-reference.com/teams/" + abbrs["home"]  + "/" + years["home"] + ".shtml"
+		)
 	home_tree = html.fromstring(home_page.content)
-	away_page = requests.get(
-		"https://www.baseball-reference.com/teams/" + abbrs["away"]  + "/" + years["away"] + ".shtml"
-	)
+	away_page = cloudscraper.create_scraper().get(
+			"https://www.baseball-reference.com/teams/" + abbrs["away"]  + "/" + years["away"] + ".shtml"
+		)
 	away_tree = html.fromstring(away_page.content)
 
 	###########################################################
 	# Scrape top 12 pitchers and earned run averages for specified team/year
-
+	# A third column was added so that we can store pitcher's stats
 	pitchers = {"home": 
 					[
 						[[""], [0], [""]],
@@ -325,77 +457,199 @@ def LoadRelievers(abbrs, years):
 					]
 				}
 
+	# A third column was added so that we can store pitcher's stats
 	relief_pitchers = {"home": [[[""], [0], [""]], [[""], [0], [""]], [[""], [0], [""]], [[""], [0], [""]]], "away": [[[""], [0], [""]], [[""], [0], [""]], [[""], [0], [""]], [[""], [0], [""]]]}
 
 	closers = {"home": ["", 0, ""], "away": ["", 0, ""]}
+
 
 	# Scrape names and Earned Run Averages of top 12 pitchers
 	# (Some extras because there are a variable number of blank/header lines mixed in)
 	for x in range(12):
 		# Home
-		fullname = home_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[2]/@csk"
-		)
-		position = home_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr['
-			+ str(x + 1)
-			+ "]/td[1]/descendant::strong/text()"
-		)
-		if str(fullname).strip("[],'") != "":
-			fname = str(fullname).partition(",")[2]
-			lname = str(fullname).partition(",")[0]
-			if str(position).strip("[],'") == "CL":
-				# Home closer detected
-				closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = home_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				closers["home"][1] = float(str(era).strip("[]'"))
-				closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
-				pitchers["home"][x][0] = "_EMPTY_"
+		if x <= 4:
+			fullname = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[1]"
+								)[0].text_content().strip()
+			position = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Home closer detected
+					closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath('//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["home"][1] = float(str(era).strip("[]'"))
+					closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["home"][x][0] = "_EMPTY_"
+				else:
+					# Not closer
+					pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["home"][x][1] = float(str(era).strip("[]'"))
+					pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
 			else:
-				# Not closer
-				pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = home_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				pitchers["home"][x][1] = float(str(era).strip("[]'"))
-				pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
-		else:
-			# Blank/header line
-			pitchers["home"][x][0] = "_EMPTY_"
+				# Blank/header line
+				pitchers["home"][x][0] = "_EMPTY_"
 
-		# Away
-		fullname = away_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[2]/@csk"
-		)
-		position = away_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr['
-			+ str(x + 1)
-			+ "]/td[1]/descendant::strong/text()"
-		)
-		if str(fullname).strip("[],'") != "":
-			fname = str(fullname).partition(",")[2]
-			lname = str(fullname).partition(",")[0]
-			if str(position).strip("[],'") == "CL":
-				# Away closer detected
-				closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = away_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				closers["away"][1] = float(str(era).strip("[]'"))
-				closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			# Away
+			fullname = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[1]"
+								)[0].text_content().strip()
+			position = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Away closer detected
+					closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["away"][1] = float(str(era).strip("[]'"))
+					closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["away"][x][0] = "_EMPTY_"
+				else:  # Not closer
+					pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["away"][x][1] = float(str(era).strip("[]'"))
+					pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
 				pitchers["away"][x][0] = "_EMPTY_"
-			else:  # Not closer
-				pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = away_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				pitchers["away"][x][1] = float(str(era).strip("[]'"))
-				pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
-		else:
-			# Blank/header line
-			pitchers["away"][x][0] = "_EMPTY_"
+
+		if x > 4 and x <= 9:
+			# Home
+			fullname = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[1]"
+								)[0].text_content().strip()
+			position = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Home closer detected
+					closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["home"][1] = float(str(era).strip("[]'"))
+					closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'"))
+					pitchers["home"][x][0] = "_EMPTY_"
+				else:
+					# Not closer
+					pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["home"][x][1] = float(str(era).strip("[]'"))
+					pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["home"][x][0] = "_EMPTY_"
+
+			# Away
+			fullname = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[1]"
+								)[0].text_content().strip()
+			position = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Away closer detected
+					closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["away"][1] = float(str(era).strip("[]'"))
+					closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["away"][x][0] = "_EMPTY_"
+				else:  # Not closer
+					pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["away"][x][1] = float(str(era).strip("[]'"))
+					pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["away"][x][0] = "_EMPTY_"
+
+		if x > 9:
+			# Home
+			fullname = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[1]"
+								)[0].text_content().strip()
+			position = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Home closer detected
+					closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["home"][1] = float(str(era).strip("[]'"))
+					closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'"))
+					pitchers["home"][x][0] = "_EMPTY_"
+				else:
+					# Not closer
+					pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["home"][x][1] = float(str(era).strip("[]'"))
+					pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["home"][x][0] = "_EMPTY_"
+
+			# Away
+			fullname = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[1]"
+								)[0].text_content().strip()
+			position = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Away closer detected
+					closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["away"][1] = float(str(era).strip("[]'"))
+					closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["away"][x][0] = "_EMPTY_"
+				else:  # Not closer
+					pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["away"][x][1] = float(str(era).strip("[]'"))
+					pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["away"][x][0] = "_EMPTY_"
 
 	# For some reason, these loops need to be run twice each to remove empty array elements
 	for x in pitchers["home"]:
@@ -420,18 +674,18 @@ def LoadRelievers(abbrs, years):
 
 def LoadClosers(abbrs, years):
 
-	home_page = requests.get(
-		"https://www.baseball-reference.com/teams/" + abbrs["home"]  + "/" + years["home"] + ".shtml"
-	)
+	home_page = cloudscraper.create_scraper().get(
+			"https://www.baseball-reference.com/teams/" + abbrs["home"]  + "/" + years["home"] + ".shtml"
+		)
 	home_tree = html.fromstring(home_page.content)
-	away_page = requests.get(
-		"https://www.baseball-reference.com/teams/" + abbrs["away"]  + "/" + years["away"] + ".shtml"
-	)
+	away_page = cloudscraper.create_scraper().get(
+			"https://www.baseball-reference.com/teams/" + abbrs["away"]  + "/" + years["away"] + ".shtml"
+		)
 	away_tree = html.fromstring(away_page.content)
 
 	###########################################################
 	# Scrape top 12 pitchers and earned run averages for specified team/year
-
+	# A third column was added so that we can store pitcher's stats
 	pitchers = {"home": 
 					[
 						[[""], [0], [""]],
@@ -464,77 +718,199 @@ def LoadClosers(abbrs, years):
 					]
 				}
 
+	# A third column was added so that we can store pitcher's stats
 	relief_pitchers = {"home": [[[""], [0], [""]], [[""], [0], [""]], [[""], [0], [""]], [[""], [0], [""]]], "away": [[[""], [0], [""]], [[""], [0], [""]], [[""], [0], [""]], [[""], [0], [""]]]}
 
 	closers = {"home": ["", 0, ""], "away": ["", 0, ""]}
+
 
 	# Scrape names and Earned Run Averages of top 12 pitchers
 	# (Some extras because there are a variable number of blank/header lines mixed in)
 	for x in range(12):
 		# Home
-		fullname = home_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[2]/@csk"
-		)
-		position = home_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr['
-			+ str(x + 1)
-			+ "]/td[1]/descendant::strong/text()"
-		)
-		if str(fullname).strip("[],'") != "":
-			fname = str(fullname).partition(",")[2]
-			lname = str(fullname).partition(",")[0]
-			if str(position).strip("[],'") == "CL":
-				# Home closer detected
-				closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = home_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				closers["home"][1] = float(str(era).strip("[]'"))
-				closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
-				pitchers["home"][x][0] = "_EMPTY_"
+		if x <= 4:
+			fullname = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[1]"
+								)[0].text_content().strip()
+			position = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Home closer detected
+					closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath('//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["home"][1] = float(str(era).strip("[]'"))
+					closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["home"][x][0] = "_EMPTY_"
+				else:
+					# Not closer
+					pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["home"][x][1] = float(str(era).strip("[]'"))
+					pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
 			else:
-				# Not closer
-				pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = home_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				pitchers["home"][x][1] = float(str(era).strip("[]'"))
-				pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
-		else:
-			# Blank/header line
-			pitchers["home"][x][0] = "_EMPTY_"
+				# Blank/header line
+				pitchers["home"][x][0] = "_EMPTY_"
 
-		# Away
-		fullname = away_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[2]/@csk"
-		)
-		position = away_tree.xpath(
-			'//table[@id="team_pitching"]/tbody/tr['
-			+ str(x + 1)
-			+ "]/td[1]/descendant::strong/text()"
-		)
-		if str(fullname).strip("[],'") != "":
-			fname = str(fullname).partition(",")[2]
-			lname = str(fullname).partition(",")[0]
-			if str(position).strip("[],'") == "CL":
-				# Away closer detected
-				closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = away_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				closers["away"][1] = float(str(era).strip("[]'"))
-				closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			# Away
+			fullname = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[1]"
+								)[0].text_content().strip()
+			position = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Away closer detected
+					closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["away"][1] = float(str(era).strip("[]'"))
+					closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["away"][x][0] = "_EMPTY_"
+				else:  # Not closer
+					pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 1) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["away"][x][1] = float(str(era).strip("[]'"))
+					pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
 				pitchers["away"][x][0] = "_EMPTY_"
-			else:  # Not closer
-				pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
-				era = away_tree.xpath(
-					'//table[@id="team_pitching"]/tbody/tr[' + str(x + 1) + "]/td[7]/text()"
-				)
-				pitchers["away"][x][1] = float(str(era).strip("[]'"))
-				pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
-		else:
-			# Blank/header line
-			pitchers["away"][x][0] = "_EMPTY_"
+
+		if x > 4 and x <= 9:
+			# Home
+			fullname = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[1]"
+								)[0].text_content().strip()
+			position = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Home closer detected
+					closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["home"][1] = float(str(era).strip("[]'"))
+					closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'"))
+					pitchers["home"][x][0] = "_EMPTY_"
+				else:
+					# Not closer
+					pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["home"][x][1] = float(str(era).strip("[]'"))
+					pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["home"][x][0] = "_EMPTY_"
+
+			# Away
+			fullname = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[1]"
+								)[0].text_content().strip()
+			position = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Away closer detected
+					closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["away"][1] = float(str(era).strip("[]'"))
+					closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["away"][x][0] = "_EMPTY_"
+				else:  # Not closer
+					pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 2) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["away"][x][1] = float(str(era).strip("[]'"))
+					pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["away"][x][0] = "_EMPTY_"
+
+		if x > 9:
+			# Home
+			fullname = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[1]"
+								)[0].text_content().strip()
+			position = home_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Home closer detected
+					closers["home"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["home"][1] = float(str(era).strip("[]'"))
+					closers["home"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'"))
+					pitchers["home"][x][0] = "_EMPTY_"
+				else:
+					# Not closer
+					pitchers["home"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = home_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["home"][x][1] = float(str(era).strip("[]'"))
+					pitchers["home"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["home"][x][0] = "_EMPTY_"
+
+			# Away
+			fullname = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[1]"
+								)[0].text_content().strip()
+			position = away_tree.xpath(
+				'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[3]"
+								)[0].text_content().strip()
+			if str(fullname).strip("[],'") != "":
+				fname = str(fullname).split()[0].replace("*", "").replace("#", "")
+				lname = str(fullname).split()[1].replace("*", "").replace("#", "")
+				if str(position).strip("[],'") == "CL":
+					# Away closer detected
+					closers["away"][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					closers["away"][1] = float(str(era).strip("[]'"))
+					closers["away"][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+					pitchers["away"][x][0] = "_EMPTY_"
+				else:  # Not closer
+					pitchers["away"][x][0] = fname.strip("[],'") + " " + lname.strip("[],'")
+					era = away_tree.xpath(
+						'//table[@id="players_standard_pitching"]//tbody//tr[' + str(x + 3) + "]//td[8]"
+								)[0].text_content().strip()
+					pitchers["away"][x][1] = float(str(era).strip("[]'"))
+					pitchers["away"][x][2] = pitcher_i(fname.strip("[],'"), lname.strip("[],'")) # Pitcher's stats
+			else:
+				# Blank/header line
+				pitchers["away"][x][0] = "_EMPTY_"
 
 	# For some reason, these loops need to be run twice each to remove empty array elements
 	for x in pitchers["home"]:
